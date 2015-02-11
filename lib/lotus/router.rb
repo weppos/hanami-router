@@ -79,6 +79,7 @@ module Lotus
     # @option options [String] :scheme The HTTP scheme (defaults to `"http"`)
     # @option options [String] :host The URL host (defaults to `"localhost"`)
     # @option options [String] :port The URL port (defaults to `"80"`)
+    # @option options [String] :prefix The path prefix (defaults to nil)
     # @option options [Object, #resolve, #find, #action_separator] :resolver
     #   the route resolver (defaults to `Lotus::Routing::EndpointResolver.new`)
     # @option options [Object, #generate] :route the route class
@@ -166,6 +167,7 @@ module Lotus
     #
     #   [200, {}, ["{:name=>\"LG\",:id=>\"1\"}"]]
     def initialize(options = {}, &blk)
+      @prefix = options.fetch(:prefix, nil)
       @router = Routing::HttpRouter.new(options)
       define(&blk)
     end
@@ -205,7 +207,13 @@ module Lotus
     #     get # ...
     #   end
     def define(&blk)
-      instance_eval(&blk) if block_given?
+      return unless block_given?
+
+      if @prefix
+        namespace(@prefix) { instance_eval(&blk) }
+      else
+        instance_eval(&blk)
+      end
     end
 
     # Check if there are defined routes
